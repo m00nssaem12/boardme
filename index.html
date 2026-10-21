@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>보드미 다모임 조 배정</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#222;--sub:#6b6b6b;--line:#e2ddd2;--acc:#2f6f5e;--acc2:#e8f2ee;--m:#2b6cb0;--f:#c0508a;--ok:#1f7a4d;--okbg:#e3f4ea;--no:#b3392f;--nobg:#fbe8e6;--warn:#b7791f}
+@media (prefers-color-scheme:dark){:root{--bg:#17191a;--card:#222527;--ink:#eceae4;--sub:#a3a09a;--line:#363a3c;--acc:#5fb59d;--acc2:#1f2f2a;--m:#6aa5e6;--f:#e486b8;--ok:#6fd09b;--okbg:#1d3326;--no:#f08a80;--nobg:#3a2321;--warn:#e3b45c}}
+*{box-sizing:border-box}body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;line-height:1.45}
+button,select,input{font:inherit;color:inherit}
+.wrap{max-width:1300px;margin:0 auto}h1{font-size:1.25rem;margin:0 0 10px}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}.btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}.sm1{padding:2px 8px;font-size:.78rem;margin-left:auto}
+.top,.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.bar,#login{display:none}body.adm .bar{display:flex}body.lg #login{display:flex}
+.bar input[type=number]{width:62px;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.sp{flex:1}.stat{color:var(--sub);font-size:.88rem}
+#login{justify-content:center;margin:30px 0}#login form{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;text-align:center;width:min(340px,92vw)}
+#login input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);margin:12px 0 8px}#err{color:var(--no);min-height:1.3em;font-size:.9rem}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.tb{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:5px 14px;cursor:pointer}.tb.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.layout{display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start}.layout.np{grid-template-columns:1fr}@media(max-width:820px){.layout{grid-template-columns:1fr}}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.zone{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:90px}.zone.over{outline:2px dashed var(--acc);background:var(--acc2)}
+.zone.me{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc2)}
+.zh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:700}.zh small{font-weight:400;color:var(--sub)}
+.lead{width:100%;margin-bottom:8px;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:.85rem}
+.mc{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:7px;background:var(--bg)}.mc[draggable=true]{cursor:grab}.mc.L{border-color:var(--acc);background:var(--acc2)}
+.r1{display:flex;align-items:center;gap:6px}.nm{font-weight:700}.g{font-size:.72rem;color:#fff;border-radius:99px;padding:1px 7px}.g.남{background:var(--m)}.g.여{background:var(--f)}
+.mv{margin-left:auto;max-width:78px;font-size:.78rem;border:1px solid var(--line);border-radius:6px;background:var(--card);padding:2px}
+.star{border:0;background:none;cursor:pointer;font-size:1rem;padding:0;opacity:.45}.star.on{opacity:1}
+.ch{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;align-items:center}.ch i{font-style:normal;font-size:.68rem;padding:1px 6px;border-radius:5px}.ch b{font-size:.7rem}
+.ch .y{background:var(--okbg);color:var(--ok)}.ch .x{background:var(--nobg);color:var(--no)}.ch .tm{background:var(--card);border:1px solid var(--line)}.ch i small{opacity:.8;font-size:.62rem;margin-left:3px}
+.sm{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;background:var(--acc2)}.st{font-size:.75rem;font-weight:700;color:var(--sub);margin-bottom:2px}
+.wn{margin-top:5px;font-size:.74rem;color:var(--warn)}.empty{color:var(--sub);font-size:.85rem;text-align:center;padding:10px}
+.ad{background:none;border:0;color:var(--sub);font-size:.78rem;cursor:pointer;margin-top:22px;opacity:.6}
+</style></head><body><div class="wrap">
+<h1>🎲 보드미 다모임 조 배정</h1>
+<div class="top"><span id="me"></span><span class="sp"></span><span class="stat" id="stat"></span></div>
+<div id="login"><form id="lf"><b>🔒 관리자</b><input type="password" id="pw" autocomplete="current-password"><div id="err"></div><button class="btn p" style="width:100%" id="lb">입장</button></form></div>
+<div class="bar"><label>조 수 <input type="number" id="nt" min="2" max="12"></label><button class="btn" id="ap">적용</button><span class="sp"></span>
+<button class="btn p" id="rnd">🎲 랜덤 배정</button><button class="btn p" id="bal">⚖️ 성비 고려 배정</button><button class="btn" id="rs">초기화</button>
+<button class="btn" id="up">📂 엑셀 업로드</button><input type="file" id="fi" accept=".xlsx,.xls" hidden><button class="btn" id="cp">결과 복사</button><button class="btn" id="ex">관리자 나가기</button></div>
+<div class="tabs" id="tabs"></div>
+<div class="layout" id="lay"><div id="pool"></div><div class="teams" id="teams"></div></div>
+<button class="ad" id="adm">관리자</button></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getDatabase,ref,onValue,update,runTransaction} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+const app=initializeApp({apiKey:"AIzaSyCj2LsupYwGk3EOEpjZityyXgmeLoU6V94",authDomain:"boardme-ab90a.firebaseapp.com",databaseURL:"https://boardme-ab90a-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"boardme-ab90a",storageBucket:"boardme-ab90a.firebasestorage.app",messagingSenderId:"463094531784",appId:"1:463094531784:web:b4d97befd9479b2b7bc7fd"});
+const db=getDatabase(app),R=ref(db,'boardme'),U=o=>update(R,o);
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ent=o=>Object.entries(o||{}).filter(([,v])=>v!=null);
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+let D={},M=[],PRIV={},ADM=false,PW='',ME=null,SEL=null;
+{const h=/^#t(\d+)$/.exec(location.hash);if(h)SEL=+h[1]-1;try{const v=localStorage.getItem('bm_me');if(v!=null)ME=+v}catch(_){}}
+const N=()=>D.config?.n||3,A=id=>D.assign?.['m'+id],L=t=>D.leaders?.['t'+t],byId=id=>M.find(m=>m.id==id);
+/* 암호화 (관리자 비밀번호) */
+const kd=async(pw,salt,u)=>crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:150000,hash:'SHA-256'},await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,[u]);
+const enc=async(o,pw)=>{const s=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await kd(pw,s,'encrypt'),new TextEncoder().encode(JSON.stringify(o))));return btoa(String.fromCharCode(...s,...iv,...ct))};
+const dec=async(b,pw)=>{const r=Uint8Array.from(atob(b),c=>c.charCodeAt(0));return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(16,28)},await kd(pw,r.slice(0,16),'decrypt'),r.slice(28))))};
+/* 실시간 동기화 */
+onValue(R,s=>{D=s.val()||{};M=ent(D.members).map(([k,m])=>({...m,id:+k.slice(1),l:m.l||[],d:m.d||[],note:'',cf:[]})).sort((a,b)=>a.id-b.id);applyPriv();render()});
+function applyPriv(){M.forEach(m=>{const p=PRIV['m'+m.id];if(p){m.note=p.note||'';m.cf=p.cf||[]}})}
+/* 표시 조각 */
+const chips=m=>'<div class="ch">'+(m.all?'<i class="y">👍 다 좋아함</i>':m.l.length?'<b>👍</b>'+m.l.map(x=>`<i class="y">${esc(x)}</i>`).join(''):'')+'</div>'+(m.d.length?'<div class="ch"><b>👎</b>'+m.d.map(x=>`<i class="x">${esc(x)}</i>`).join('')+'</div>':'');
+const mi=m=>`<div class="ch"><i class="tm">🕒 도착 ${esc(m.ar||'-')}</i><i class="${m.ml==='가능'?'y':m.ml==='불가능'?'x':'tm'}">🍚 식사 ${esc(m.ml||'-')}</i></div>`;
+function tally(ms,f,cls,ic,sort){const o={};ms.forEach(m=>(f(m)||[]).forEach(g=>(o[g]=o[g]||[]).push(m.n)));let e=Object.entries(o);e=sort?e.sort(sort):e.sort((a,b)=>b[1].length-a[1].length||a[0].localeCompare(b[0]));
+return e.length?`<div class="ch"><b>${ic}</b>${e.map(([g,n])=>`<i class="${typeof cls=='function'?cls(g):cls}">${esc(g)} ${n.length}<small>${n.map(esc).join('·')}</small></i>`).join('')}</div>`:''}
+function sum(ms){if(!ms.length)return'';const al=ms.filter(m=>m.all).map(m=>esc(m.n));
+return `<div class="sm"><div class="st">장르 취향 요약</div>${tally(ms,m=>m.l,'y','👍')}${al.length?`<div class="ch"><b>👍</b><i class="y">다 좋아함 ${al.length}<small>${al.join('·')}</small></i></div>`:''}${tally(ms,m=>m.d,'x','👎')}</div>`}
+const ORD=['3시 이전','3시~3시 30분','3시 30분~4시','4시~4시 30분','4시 30분~5시','5시~5시 30분'];
+function info(ms){if(!ms.length)return'';const o=(a,b)=>(ORD.indexOf(a[0])+99)%99-(ORD.indexOf(b[0])+99)%99;
+return `<div class="sm"><div class="st">도착·식사 요약</div>${tally(ms,m=>[m.ar||'미응답'],'tm','🕒',o)}${tally(ms,m=>[m.ml||'미응답'],g=>g==='가능'?'y':g==='불가능'?'x':'tm','🍚',(a,b)=>b[1].length-a[1].length)}</div>`}
+function drawTabs(){const n=N();if(SEL!=null&&SEL>=n)SEL=null;$('#tabs').innerHTML=M.length?[null,...Array(n).keys()].map(i=>`<button class="tb ${SEL===i?'on':''}" data-i="${i==null?'':i}">${i==null?'전체':(i+1)+'조'}</button>`).join(''):''}
+/* 카드 */
+function card(m,t,F){const isL=t!=null&&L(t)==m.id;let act='';
+if(ADM)act=`<select class="mv" data-mv="${m.id}"><option value="" disabled selected>이동</option><option value="">미배정</option>${[...Array(N()).keys()].map(i=>`<option value="${i}">${i+1}조</option>`).join('')}</select>`;
+else if(ME!=null&&t==null)act=`<button class="btn p sm1" data-take="${m.id}">＋ 내 조로</button>`;
+else if(ME!=null&&t===ME&&!isL)act=`<button class="btn sm1" data-rel="${m.id}">빼기</button>`;
+const mates=ADM&&t!=null?M.filter(o=>o.id!=m.id&&A(o.id)===t&&(m.cf.includes(o.id)||o.cf.includes(m.id))):[];
+return `<div class="mc ${isL?'L':''}" ${ADM?'draggable="true"':''} data-id="${m.id}"><div class="r1">${ADM&&t!=null?`<button class="star ${isL?'on':''}" data-star="${m.id}">★</button>`:isL?'👑':''}<span class="nm">${esc(m.n)}</span><span class="g ${esc(m.g)}">${esc(m.g)}</span>${act}</div>${chips(m)}${F?mi(m):''}${m.note?`<div class="wn">불편 희망: ${esc(m.note)}</div>`:''}${mates.length?`<div class="wn">⚠️ 같은 조에 불편 대상: ${mates.map(o=>esc(o.n)).join(', ')}</div>`:''}</div>`}
+function render(){const n=N(),a=M.filter(m=>m.g=='남').length;$('#nt').value=n;$('#stat').textContent=M.length?`총 ${M.length}명 (남 ${a} / 여 ${M.length-a})`:'';
+$('#lb').textContent=D.private?'입장':'비밀번호 설정';
+const lds=[...Array(n).keys()].filter(t=>L(t)!=null&&byId(L(t)));
+if(ME!=null&&(ME>=n||!lds.includes(ME)))ME=null;
+$('#me').innerHTML=ME!=null?`👑 <b>${esc(byId(L(ME)).n)}</b> 팀장 · ${ME+1}조 <button class="btn sm1" id="lo">팀장 나가기</button>`:lds.length&&!ADM?`<select id="ls"><option value="">팀장이세요? 이름을 선택하세요</option>${lds.map(t=>`<option value="${t}">${esc(byId(L(t)).n)} (${t+1}조)</option>`).join('')}</select>`:'';
+drawTabs();const un=M.filter(m=>A(m.id)==null),showPool=ADM||ME!=null;
+$('#lay').className='layout'+(showPool?'':' np');
+$('#pool').innerHTML=showPool?`<div class="zone" data-zone=""><div class="zh">미배정 <small>${un.length}명</small></div>${un.map(m=>card(m,null,true)).join('')||'<div class="empty">모두 배정되었습니다</div>'}</div>`:'';
+if(!M.length){$('#teams').innerHTML='<div class="empty">아직 명단이 없습니다. 관리자가 엑셀을 업로드하면 표시됩니다.</div>';return}
+let h='';for(let t=0;t<n;t++){if(SEL!=null&&SEL!==t)continue;const mem=M.filter(m=>A(m.id)===t).sort((x,y)=>(L(t)==y.id)-(L(t)==x.id)),mm=mem.filter(m=>m.g=='남').length;
+h+=`<div class="zone ${ME===t?'me':''}" data-zone="${t}"><div class="zh">${t+1}조 <small>${mem.length}명 · 남 ${mm} / 여 ${mem.length-mm}</small></div>${sum(mem)}${SEL!=null?info(mem):''}
+${ADM?`<select class="lead" data-lead="${t}"><option value="">👑 팀장 선택…</option>${M.map(m=>`<option value="${m.id}" ${L(t)==m.id?'selected':''}>${esc(m.n)} (${esc(m.g)})</option>`).join('')}</select>`:''}
+${mem.map(m=>card(m,t,SEL!=null||ME===t)).join('')||'<div class="empty">비어 있음</div>'}</div>`}
+$('#teams').innerHTML=h}
+/* 변경 */
+const clr=(id,o)=>{for(let t=0;t<12;t++)if(L(t)==id)o['leaders/t'+t]=null};
+const setTeam=(id,t)=>{const o={};clr(id,o);o['assign/m'+id]=t===''||t==null?null:+t;U(o)};
+const setLeader=(id,t)=>{const o={};clr(id,o);o['assign/m'+id]=+t;o['leaders/t'+t]=+id;U(o)};
+document.addEventListener('change',e=>{const t=e.target;
+if(t.dataset.mv!==undefined)setTeam(t.dataset.mv,t.value);
+if(t.dataset.lead!==undefined){t.value?setLeader(t.value,t.dataset.lead):U({['leaders/t'+t.dataset.lead]:null})}
+if(t.id==='ls'&&t.value!==''){ME=+t.value;SEL=ME;try{localStorage.setItem('bm_me',ME)}catch(_){}render()}});
+document.addEventListener('click',e=>{const g=s=>e.target.closest(s);let b;
+if(b=g('.tb')){SEL=b.dataset.i===''?null:+b.dataset.i;render()}
+else if(b=g('[data-star]')){const id=+b.dataset.star,t=A(id);L(t)==id?U({['leaders/t'+t]:null}):U({['leaders/t'+t]:id})}
+else if(b=g('[data-take]')){runTransaction(ref(db,'boardme/assign/m'+b.dataset.take),c=>c==null?ME:undefined).then(r=>{if(!r.committed)alert('이미 다른 팀장이 선택한 팀원이에요.')})}
+else if(b=g('[data-rel]')){const id=+b.dataset.rel;if(A(id)===ME&&L(ME)!=id)U({['assign/m'+id]:null})}
+else if(g('#lo')){ME=null;try{localStorage.removeItem('bm_me')}catch(_){}render()}});
+let drag=null;
+document.addEventListener('dragstart',e=>{const c=e.target.closest('.mc');if(c&&ADM){drag=c.dataset.id;e.dataTransfer.setData('text/plain',drag)}});
+document.addEventListener('dragover',e=>{const z=e.target.closest('[data-zone]');if(z&&drag){e.preventDefault();z.classList.add('over')}});
+document.addEventListener('dragleave',e=>{const z=e.target.closest('[data-zone]');if(z)z.classList.remove('over')});
+document.addEventListener('drop',e=>{const z=e.target.closest('[data-zone]');if(z&&drag){e.preventDefault();setTeam(drag,z.dataset.zone);drag=null}});
+/* 관리자 */
+async function enter(pw){if(D.private)PRIV=await dec(D.private,pw);else{await U({private:await enc({},pw)});PRIV={}}
+ADM=true;PW=pw;try{sessionStorage.setItem('bm_pw',pw)}catch(_){}document.body.className='adm';ME=null;applyPriv();render()}
+$('#lf').onsubmit=async e=>{e.preventDefault();$('#err').textContent='';try{await enter($('#pw').value)}catch(_){$('#err').textContent='비밀번호가 올바르지 않습니다.'}};
+$('#adm').onclick=()=>{document.body.className='lg';$('#pw').focus()};
+$('#ex').onclick=()=>{ADM=false;PRIV={};try{sessionStorage.removeItem('bm_pw')}catch(_){}document.body.className='';M.forEach(m=>{m.note='';m.cf=[]});render()};
+let first=true;onValue(R,async()=>{if(!first)return;first=false;let p=null;try{p=sessionStorage.getItem('bm_pw')}catch(_){}if(p&&D.private){try{await enter(p)}catch(_){}}},{onlyOnce:true});
+$('#ap').onclick=()=>{const n=Math.max(2,Math.min(12,+$('#nt').value||2)),o={'config/n':n};ent(D.assign).forEach(([k,v])=>{if(v>=n)o['assign/'+k]=null});ent(D.leaders).forEach(([k])=>{if(+k.slice(1)>=n)o['leaders/'+k]=null});U(o)};
+$('#rs').onclick=()=>{if(confirm('팀장과 배정을 모두 초기화할까요?'))U({assign:null,leaders:null})};
+function auto(mode){const n=N(),keep=new Set(ent(D.leaders).map(([,v])=>v)),o={},cnt=Array.from({length:n},()=>({t:0,'남':0,'여':0}));
+M.forEach(m=>{if(keep.has(m.id)&&A(m.id)!=null&&A(m.id)<n){cnt[A(m.id)].t++;cnt[A(m.id)][m.g]++}else o['assign/m'+m.id]=null});
+let pool=shuffle(M.filter(m=>!keep.has(m.id)||A(m.id)==null||A(m.id)>=n));if(mode=='bal')pool=[...pool.filter(m=>m.g=='여'),...pool.filter(m=>m.g!='여')];
+const cap=Math.ceil(M.length/n);
+for(const m of pool){const c=[...Array(n).keys()].filter(i=>cnt[i].t<cap),key=i=>mode=='bal'?cnt[i][m.g]*100+cnt[i].t:cnt[i].t,mn=Math.min(...c.map(key)),t=shuffle(c.filter(i=>key(i)==mn))[0];o['assign/m'+m.id]=t;cnt[t].t++;cnt[t][m.g]++}
+U(o)}
+$('#rnd').onclick=()=>auto('rnd');$('#bal').onclick=()=>auto('bal');
+$('#cp').onclick=async()=>{let s='';for(let t=0;t<N();t++){s+=`[${t+1}조]${L(t)&&byId(L(t))?' 팀장: '+byId(L(t)).n:''}\n`+M.filter(m=>A(m.id)===t).map(m=>`- ${m.n}(${m.g})`).join('\n')+'\n\n'}
+const un=M.filter(m=>A(m.id)==null);if(un.length)s+=`[미배정] ${un.map(m=>m.n).join(', ')}\n`;
+try{await navigator.clipboard.writeText(s.trim());$('#cp').textContent='복사됨 ✓'}catch(_){prompt('복사해서 사용하세요',s)}setTimeout(()=>$('#cp').textContent='결과 복사',1500)};
+/* 엑셀 업로드 */
+$('#up').onclick=()=>$('#fi').click();
+$('#fi').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;let rows;
+try{const wb=XLSX.read(await f.arrayBuffer());rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''})}catch(_){alert('엑셀 파일을 읽지 못했습니다.');return}
+const gp=s=>{s=String(s).trim();return s==='다 좋아함'?{all:true,l:[]}:{all:false,l:s.split('|').map(p=>p.replace(/\s*\(.*$/,'').trim()).filter(g=>g&&g!=='없음'&&g!=='잘 모름')}};
+const mp=new Map();rows.slice(1).forEach(r=>{const n=String(r[3]).trim();if(!n)return;const a=gp(r[7]),d=gp(r[8]);let note=String(r[9]).trim();if(/^(없|j$|x$|-)/.test(note))note='';mp.set(n,{n,g:String(r[4]).trim()[0]||'남',ar:String(r[5]).trim(),ml:String(r[6]).trim(),all:a.all,l:a.l,d:d.l,note})});
+const nm=[...mp.values()].map((m,i)=>({...m,id:i+1}));if(!nm.length){alert('읽을 응답이 없습니다. 양식을 확인하세요.');return}
+const x=nm.filter(m=>m.g=='남').length;if(!confirm(`응답자 ${nm.length}명(남 ${x} / 여 ${nm.length-x})으로 명단을 교체할까요?\n기존 편성은 이름이 같은 사람끼리 유지됩니다.`))return;
+const old={};M.forEach(m=>{const t=A(m.id);if(t!=null)old[m.n]={t,L:L(t)==m.id}});
+const mem={},asg={},lds={},priv={};nm.forEach(m=>{const k='m'+m.id,{id,note,...pub}=m;mem[k]=pub;priv[k]={note,cf:nm.filter(o=>o.n!==m.n&&note.includes(o.n)).map(o=>o.id)};const o=old[m.n];if(o&&o.t<N()){asg[k]=o.t;if(o.L)lds['t'+o.t]=m.id}});
+await U({members:mem,assign:Object.keys(asg).length?asg:null,leaders:Object.keys(lds).length?lds:null,private:await enc(priv,PW)});PRIV=priv;applyPriv();render()};
+</script></body></html>
