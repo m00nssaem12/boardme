@@ -36,7 +36,7 @@ button,select,input{font:inherit;color:inherit}
 <div class="top"><span id="me"></span><span class="sp"></span><span class="stat" id="stat"></span></div>
 <div id="login"><form id="lf"><b>🔒 관리자</b><input type="password" id="pw" autocomplete="current-password"><div id="err"></div><button class="btn p" style="width:100%" id="lb">입장</button></form></div>
 <div class="bar"><label>조 수 <input type="number" id="nt" min="2" max="12"></label><button class="btn" id="ap">적용</button><span class="sp"></span>
-<button class="btn p" id="rnd">🎲 랜덤 배정</button><button class="btn p" id="bal">⚖️ 성비 고려 배정</button><button class="btn" id="rs">초기화</button>
+<button class="btn p" id="rnd">🎲 랜덤 배정</button><button class="btn p" id="bal">⚖️ 성비 고려 배정</button><label class="stat"><input type="checkbox" id="av" checked> 불편 희망 피하기</label><label class="stat">조당 최대 <input type="number" id="mx" min="1" max="30"></label><button class="btn" id="cl">🔒 선택 종료</button><button class="btn" id="un" disabled>↩️ 되돌리기</button><button class="btn" id="rs">초기화</button>
 <button class="btn" id="up">📂 엑셀 업로드</button><input type="file" id="fi" accept=".xlsx,.xls" hidden><button class="btn" id="cp">결과 복사</button><button class="btn" id="ex">관리자 나가기</button></div>
 <div class="tabs" id="tabs"></div>
 <div class="layout" id="lay"><div id="pool"></div><div class="teams" id="teams"></div></div>
@@ -52,6 +52,8 @@ const ent=o=>Object.entries(o||{}).filter(([,v])=>v!=null);
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 let D={},M=[],PRIV={},ADM=false,PW='',ME=null,SEL=null;
 {const h=/^#t(\d+)$/.exec(location.hash);if(h)SEL=+h[1]-1;try{const v=localStorage.getItem('bm_me');if(v!=null)ME=+v}catch(_){}}
+let HIST=[];const snap=()=>{HIST.push(JSON.parse(JSON.stringify({assign:D.assign||null,leaders:D.leaders||null})));if(HIST.length>30)HIST.shift();$('#un').disabled=false},AU=o=>{snap();return U(o)};
+const OPEN=()=>D.config?.open!==false,MAXT=()=>D.config?.max||Math.ceil(M.length/N()),SZ=t=>M.filter(m=>A(m.id)===t).length;
 const N=()=>D.config?.n||3,A=id=>D.assign?.['m'+id],L=t=>D.leaders?.['t'+t],byId=id=>M.find(m=>m.id==id);
 /* 암호화 (관리자 비밀번호) */
 const kd=async(pw,salt,u)=>crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:150000,hash:'SHA-256'},await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,[u]);
@@ -65,8 +67,9 @@ const chips=m=>'<div class="ch">'+(m.all?'<i class="y">👍 다 좋아함</i>':m
 const mi=m=>`<div class="ch"><i class="tm">🕒 도착 ${esc(m.ar||'-')}</i><i class="${m.ml==='가능'?'y':m.ml==='불가능'?'x':'tm'}">🍚 식사 ${esc(m.ml||'-')}</i></div>`;
 function tally(ms,f,cls,ic,sort){const o={};ms.forEach(m=>(f(m)||[]).forEach(g=>(o[g]=o[g]||[]).push(m.n)));let e=Object.entries(o);e=sort?e.sort(sort):e.sort((a,b)=>b[1].length-a[1].length||a[0].localeCompare(b[0]));
 return e.length?`<div class="ch"><b>${ic}</b>${e.map(([g,n])=>`<i class="${typeof cls=='function'?cls(g):cls}">${esc(g)} ${n.length}<small>${n.map(esc).join('·')}</small></i>`).join('')}</div>`:''}
-function sum(ms){if(!ms.length)return'';const al=ms.filter(m=>m.all).map(m=>esc(m.n));
-return `<div class="sm"><div class="st">장르 취향 요약</div>${tally(ms,m=>m.l,'y','👍')}${al.length?`<div class="ch"><b>👍</b><i class="y">다 좋아함 ${al.length}<small>${al.join('·')}</small></i></div>`:''}${tally(ms,m=>m.d,'x','👎')}</div>`}
+function sum(ms){if(!ms.length)return'';const al=ms.filter(m=>m.all).map(m=>esc(m.n)),gs=new Set();M.forEach(m=>[...m.l,...m.d].forEach(g=>gs.add(g)));
+const rec=ms.length<2?[]:[...gs].map(g=>[g,ms.filter(m=>m.all||m.l.includes(g)).length,ms.filter(m=>m.d.includes(g)).length]).filter(r=>!r[2]&&r[1]).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,3);
+return `<div class="sm"><div class="st">장르 취향 요약</div>${rec.length?`<div class="ch"><b>🎯 추천</b>${rec.map(r=>`<i class="y">${esc(r[0])} ${r[1]}/${ms.length}명</i>`).join('')}</div>`:''}${tally(ms,m=>m.l,'y','👍')}${al.length?`<div class="ch"><b>👍</b><i class="y">다 좋아함 ${al.length}<small>${al.join('·')}</small></i></div>`:''}${tally(ms,m=>m.d,'x','👎')}</div>`}
 const ORD=['3시 이전','3시~3시 30분','3시 30분~4시','4시~4시 30분','4시 30분~5시','5시~5시 30분'];
 function info(ms){if(!ms.length)return'';const o=(a,b)=>(ORD.indexOf(a[0])+99)%99-(ORD.indexOf(b[0])+99)%99;
 return `<div class="sm"><div class="st">도착·식사 요약</div>${tally(ms,m=>[m.ar||'미응답'],'tm','🕒',o)}${tally(ms,m=>[m.ml||'미응답'],g=>g==='가능'?'y':g==='불가능'?'x':'tm','🍚',(a,b)=>b[1].length-a[1].length)}</div>`}
@@ -74,11 +77,12 @@ function drawTabs(){const n=N();if(SEL!=null&&SEL>=n)SEL=null;$('#tabs').innerHT
 /* 카드 */
 function card(m,t,F){const isL=t!=null&&L(t)==m.id;let act='';
 if(ADM)act=`<select class="mv" data-mv="${m.id}"><option value="" disabled selected>이동</option><option value="">미배정</option>${[...Array(N()).keys()].map(i=>`<option value="${i}">${i+1}조</option>`).join('')}</select>`;
-else if(ME!=null&&t==null)act=`<button class="btn p sm1" data-take="${m.id}">＋ 내 조로</button>`;
-else if(ME!=null&&t===ME&&!isL)act=`<button class="btn sm1" data-rel="${m.id}">빼기</button>`;
+else if(ME!=null&&OPEN()&&t==null)act=`<button class="btn p sm1" data-take="${m.id}">＋ 내 조로</button>`;
+else if(ME!=null&&OPEN()&&t===ME&&!isL)act=`<button class="btn sm1" data-rel="${m.id}">빼기</button>`;
 const mates=ADM&&t!=null?M.filter(o=>o.id!=m.id&&A(o.id)===t&&(m.cf.includes(o.id)||o.cf.includes(m.id))):[];
 return `<div class="mc ${isL?'L':''}" ${ADM?'draggable="true"':''} data-id="${m.id}"><div class="r1">${ADM&&t!=null?`<button class="star ${isL?'on':''}" data-star="${m.id}">★</button>`:isL?'👑':''}<span class="nm">${esc(m.n)}</span><span class="g ${esc(m.g)}">${esc(m.g)}</span>${act}</div>${chips(m)}${F?mi(m):''}${m.note?`<div class="wn">불편 희망: ${esc(m.note)}</div>`:''}${mates.length?`<div class="wn">⚠️ 같은 조에 불편 대상: ${mates.map(o=>esc(o.n)).join(', ')}</div>`:''}</div>`}
-function render(){const n=N(),a=M.filter(m=>m.g=='남').length;$('#nt').value=n;$('#stat').textContent=M.length?`총 ${M.length}명 (남 ${a} / 여 ${M.length-a})`:'';
+function render(){const n=N(),a=M.filter(m=>m.g=='남').length;$('#nt').value=n;$('#stat').textContent=M.length?`총 ${M.length}명 (남 ${a} / 여 ${M.length-a}) · 조당 최대 ${MAXT()}명 · ${OPEN()?'선택 진행 중':'🔒 선택 마감'}`:'';
+if(document.activeElement!==$('#mx'))$('#mx').value=D.config?.max||'';$('#mx').placeholder=MAXT();$('#cl').textContent=OPEN()?'🔒 선택 종료':'🔓 선택 재개';
 $('#lb').textContent=D.private?'입장':'비밀번호 설정';
 const lds=[...Array(n).keys()].filter(t=>L(t)!=null&&byId(L(t)));
 if(ME!=null&&(ME>=n||!lds.includes(ME)))ME=null;
@@ -94,16 +98,16 @@ ${mem.map(m=>card(m,t,SEL!=null||ME===t)).join('')||'<div class="empty">비어 �
 $('#teams').innerHTML=h}
 /* 변경 */
 const clr=(id,o)=>{for(let t=0;t<12;t++)if(L(t)==id)o['leaders/t'+t]=null};
-const setTeam=(id,t)=>{const o={};clr(id,o);o['assign/m'+id]=t===''||t==null?null:+t;U(o)};
-const setLeader=(id,t)=>{const o={};clr(id,o);o['assign/m'+id]=+t;o['leaders/t'+t]=+id;U(o)};
+const setTeam=(id,t)=>{const o={};clr(id,o);o['assign/m'+id]=t===''||t==null?null:+t;AU(o)};
+const setLeader=(id,t)=>{const o={};clr(id,o);o['assign/m'+id]=+t;o['leaders/t'+t]=+id;AU(o)};
 document.addEventListener('change',e=>{const t=e.target;
 if(t.dataset.mv!==undefined)setTeam(t.dataset.mv,t.value);
-if(t.dataset.lead!==undefined){t.value?setLeader(t.value,t.dataset.lead):U({['leaders/t'+t.dataset.lead]:null})}
+if(t.dataset.lead!==undefined){t.value?setLeader(t.value,t.dataset.lead):AU({['leaders/t'+t.dataset.lead]:null})}
 if(t.id==='ls'&&t.value!==''){ME=+t.value;SEL=ME;try{localStorage.setItem('bm_me',ME)}catch(_){}render()}});
 document.addEventListener('click',e=>{const g=s=>e.target.closest(s);let b;
 if(b=g('.tb')){SEL=b.dataset.i===''?null:+b.dataset.i;render()}
-else if(b=g('[data-star]')){const id=+b.dataset.star,t=A(id);L(t)==id?U({['leaders/t'+t]:null}):U({['leaders/t'+t]:id})}
-else if(b=g('[data-take]')){runTransaction(ref(db,'boardme/assign/m'+b.dataset.take),c=>c==null?ME:undefined).then(r=>{if(!r.committed)alert('이미 다른 팀장이 선택한 팀원이에요.')})}
+else if(b=g('[data-star]')){const id=+b.dataset.star,t=A(id);L(t)==id?AU({['leaders/t'+t]:null}):AU({['leaders/t'+t]:id})}
+else if(b=g('[data-take]')){if(!OPEN())return alert('선택이 마감되었습니다.');if(SZ(ME)>=MAXT())return alert(`한 조 최대 ${MAXT()}명이에요.`);runTransaction(ref(db,'boardme/assign/m'+b.dataset.take),c=>c==null?ME:undefined).then(r=>{if(!r.committed)alert('이미 다른 팀장이 선택한 팀원이에요.')})}
 else if(b=g('[data-rel]')){const id=+b.dataset.rel;if(A(id)===ME&&L(ME)!=id)U({['assign/m'+id]:null})}
 else if(g('#lo')){ME=null;try{localStorage.removeItem('bm_me')}catch(_){}render()}});
 let drag=null;
@@ -118,14 +122,18 @@ $('#lf').onsubmit=async e=>{e.preventDefault();$('#err').textContent='';try{awai
 $('#adm').onclick=()=>{document.body.className='lg';$('#pw').focus()};
 $('#ex').onclick=()=>{ADM=false;PRIV={};try{sessionStorage.removeItem('bm_pw')}catch(_){}document.body.className='';M.forEach(m=>{m.note='';m.cf=[]});render()};
 let first=true;onValue(R,async()=>{if(!first)return;first=false;let p=null;try{p=sessionStorage.getItem('bm_pw')}catch(_){}if(p&&D.private){try{await enter(p)}catch(_){}}},{onlyOnce:true});
-$('#ap').onclick=()=>{const n=Math.max(2,Math.min(12,+$('#nt').value||2)),o={'config/n':n};ent(D.assign).forEach(([k,v])=>{if(v>=n)o['assign/'+k]=null});ent(D.leaders).forEach(([k])=>{if(+k.slice(1)>=n)o['leaders/'+k]=null});U(o)};
-$('#rs').onclick=()=>{if(confirm('팀장과 배정을 모두 초기화할까요?'))U({assign:null,leaders:null})};
-function auto(mode){const n=N(),keep=new Set(ent(D.leaders).map(([,v])=>v)),o={},cnt=Array.from({length:n},()=>({t:0,'남':0,'여':0}));
-M.forEach(m=>{if(keep.has(m.id)&&A(m.id)!=null&&A(m.id)<n){cnt[A(m.id)].t++;cnt[A(m.id)][m.g]++}else o['assign/m'+m.id]=null});
+$('#ap').onclick=()=>{const n=Math.max(2,Math.min(12,+$('#nt').value||2)),o={'config/n':n};ent(D.assign).forEach(([k,v])=>{if(v>=n)o['assign/'+k]=null});ent(D.leaders).forEach(([k])=>{if(+k.slice(1)>=n)o['leaders/'+k]=null});AU(o)};
+$('#rs').onclick=()=>{if(confirm('팀장과 배정을 모두 초기화할까요?'))AU({assign:null,leaders:null})};
+function auto(mode){const n=N(),keep=new Set(ent(D.leaders).map(([,v])=>v)),o={},tm=Array.from({length:N()},()=>[]),cnt=Array.from({length:n},()=>({t:0,'남':0,'여':0}));
+M.forEach(m=>{if(keep.has(m.id)&&A(m.id)!=null&&A(m.id)<n){cnt[A(m.id)].t++;cnt[A(m.id)][m.g]++;tm[A(m.id)].push(m)}else o['assign/m'+m.id]=null});
 let pool=shuffle(M.filter(m=>!keep.has(m.id)||A(m.id)==null||A(m.id)>=n));if(mode=='bal')pool=[...pool.filter(m=>m.g=='여'),...pool.filter(m=>m.g!='여')];
 const cap=Math.ceil(M.length/n);
-for(const m of pool){const c=[...Array(n).keys()].filter(i=>cnt[i].t<cap),key=i=>mode=='bal'?cnt[i][m.g]*100+cnt[i].t:cnt[i].t,mn=Math.min(...c.map(key)),t=shuffle(c.filter(i=>key(i)==mn))[0];o['assign/m'+m.id]=t;cnt[t].t++;cnt[t][m.g]++}
-U(o)}
+for(const m of pool){let c=[...Array(n).keys()].filter(i=>cnt[i].t<cap);if($('#av').checked){const c2=c.filter(i=>!tm[i].some(x=>m.cf.includes(x.id)||x.cf.includes(m.id)));if(c2.length)c=c2}
+const key=i=>mode=='bal'?cnt[i][m.g]*100+cnt[i].t:cnt[i].t,mn=Math.min(...c.map(key)),t=shuffle(c.filter(i=>key(i)==mn))[0];o['assign/m'+m.id]=t;cnt[t].t++;cnt[t][m.g]++;tm[t].push(m)}
+AU(o)}
+$('#un').onclick=()=>{const s=HIST.pop();if(s)U(s);$('#un').disabled=!HIST.length};
+$('#mx').onchange=()=>{const v=+$('#mx').value;U({'config/n':N(),'config/max':v>0?v:null})};
+$('#cl').onclick=()=>U({'config/n':N(),'config/open':!OPEN()});
 $('#rnd').onclick=()=>auto('rnd');$('#bal').onclick=()=>auto('bal');
 $('#cp').onclick=async()=>{let s='';for(let t=0;t<N();t++){s+=`[${t+1}조]${L(t)&&byId(L(t))?' 팀장: '+byId(L(t)).n:''}\n`+M.filter(m=>A(m.id)===t).map(m=>`- ${m.n}(${m.g})`).join('\n')+'\n\n'}
 const un=M.filter(m=>A(m.id)==null);if(un.length)s+=`[미배정] ${un.map(m=>m.n).join(', ')}\n`;
