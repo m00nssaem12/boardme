@@ -30,13 +30,30 @@ button,select,input{font:inherit;color:inherit}
 .ch .y{background:var(--okbg);color:var(--ok)}.ch .x{background:var(--nobg);color:var(--no)}.ch .tm{background:var(--card);border:1px solid var(--line)}.ch i small{opacity:.8;font-size:.62rem;margin-left:3px}
 .sm{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;background:var(--acc2)}.st{font-size:.75rem;font-weight:700;color:var(--sub);margin-bottom:2px}
 .wn{margin-top:5px;font-size:.74rem;color:var(--warn)}.empty{color:var(--sub);font-size:.85rem;text-align:center;padding:10px}
+.teams.one{grid-template-columns:1fr}
+.teams.one .zone{padding:18px}
+.teams.one .zh{font-size:1.35rem;margin-bottom:14px}
+.teams.one .zh small{font-size:.95rem}
+.teams.one .lead{font-size:1rem;padding:9px}
+.teams.one .sm{padding:14px;margin-bottom:14px}
+.teams.one .st{font-size:.95rem;margin-bottom:6px}
+.teams.one .ch{gap:6px;margin-top:8px}
+.teams.one .ch i{font-size:.9rem;padding:3px 9px;border-radius:7px}
+.teams.one .ch b{font-size:.95rem}
+.teams.one .ch i small{font-size:.78rem}
+.teams.one .members{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:12px}
+.teams.one .mc{margin-bottom:0;padding:14px}
+.teams.one .nm{font-size:1.1rem}
+.teams.one .g{font-size:.82rem;padding:2px 9px}
+.teams.one .wn{font-size:.9rem}
+.teams.one .mv{font-size:.9rem;max-width:100px}
 .ad{background:none;border:0;color:var(--sub);font-size:.78rem;cursor:pointer;margin-top:22px;opacity:.6}
 </style></head><body><div class="wrap">
 <h1>🎲 보드미 다모임 조 배정</h1>
 <div class="top"><span id="me"></span><span class="sp"></span><span class="stat" id="stat"></span></div>
 <div id="login"><form id="lf"><b>🔒 관리자</b><input type="password" id="pw" autocomplete="current-password"><div id="err"></div><button class="btn p" style="width:100%" id="lb">입장</button></form></div>
 <div class="bar"><label>조 수 <input type="number" id="nt" min="2" max="12"></label><button class="btn" id="ap">적용</button><span class="sp"></span>
-<button class="btn p" id="rnd">🎲 랜덤 배정</button><button class="btn p" id="bal">⚖️ 성비 고려 배정</button><label class="stat"><input type="checkbox" id="av" checked> 불편 희망 피하기</label><label class="stat">조당 최대 <input type="number" id="mx" min="1" max="30"></label><button class="btn" id="cl">🔒 선택 종료</button><button class="btn" id="un" disabled>↩️ 되돌리기</button><button class="btn" id="rs">초기화</button>
+<button class="btn p" id="rnd">🎲 랜덤 배정</button><button class="btn p" id="bal">⚖️ 성비 고려 배정</button><label class="stat"><input type="checkbox" id="ro" checked> 남은 사람만 배정</label><label class="stat"><input type="checkbox" id="av" checked> 불편 희망 피하기</label><label class="stat">조당 최대 <input type="number" id="mx" min="1" max="30"></label><button class="btn" id="cl">🔒 선택 종료</button><button class="btn" id="un" disabled>↩️ 되돌리기</button><button class="btn" id="rs">초기화</button>
 <button class="btn" id="up">📂 엑셀 업로드</button><input type="file" id="fi" accept=".xlsx,.xls" hidden><button class="btn" id="cp">결과 복사</button><button class="btn" id="ex">관리자 나가기</button></div>
 <div class="tabs" id="tabs"></div>
 <div class="layout" id="lay"><div id="pool"></div><div class="teams" id="teams"></div></div>
@@ -95,8 +112,8 @@ if(!M.length){$('#teams').innerHTML='<div class="empty">아직 명단이 없습�
 let h='';for(let t=0;t<n;t++){if(SEL!=null&&SEL!==t)continue;const mem=M.filter(m=>A(m.id)===t).sort((x,y)=>(L(t)==y.id)-(L(t)==x.id)),mm=mem.filter(m=>m.g=='남').length;
 h+=`<div class="zone ${ME===t?'me':''}" data-zone="${t}"><div class="zh">${t+1}조 <small>${mem.length}명 · 남 ${mm} / 여 ${mem.length-mm}</small></div>${sum(mem)}${SEL!=null?info(mem):''}
 ${ADM?`<select class="lead" data-lead="${t}"><option value="">👑 팀장 선택…</option>${M.map(m=>`<option value="${m.id}" ${L(t)==m.id?'selected':''}>${esc(m.n)} (${esc(m.g)})</option>`).join('')}</select>`:''}
-${mem.map(m=>card(m,t,SEL!=null||ME===t)).join('')||'<div class="empty">비어 있음</div>'}</div>`}
-$('#teams').innerHTML=h}
+<div class="members">${mem.map(m=>card(m,t,SEL!=null||ME===t)).join('')||'<div class="empty">비어 있음</div>'}</div></div>`}
+$('#teams').className='teams'+(SEL!=null?' one':'');$('#teams').innerHTML=h}
 /* 변경 */
 const clr=(id,o)=>{for(let t=0;t<12;t++)if(L(t)==id)o['leaders/t'+t]=null};
 const setTeam=(id,t)=>{const o={};clr(id,o);o['assign/m'+id]=t===''||t==null?null:+t;AU(o)};
@@ -126,16 +143,18 @@ let first=true;onValue(R,async()=>{if(!first)return;first=false;let p=null;try{p
 $('#ap').onclick=()=>{const n=Math.max(2,Math.min(12,+$('#nt').value||2)),o={'config/n':n};ent(D.assign).forEach(([k,v])=>{if(v>=n)o['assign/'+k]=null});ent(D.leaders).forEach(([k])=>{if(+k.slice(1)>=n)o['leaders/'+k]=null});AU(o)};
 $('#rs').onclick=()=>{if(confirm('팀장과 배정을 모두 초기화할까요?')){const o={};paths('assign',D.assign,{},o);paths('leaders',D.leaders,{},o);AU(o)}};
 function auto(mode){const n=N(),keep=new Set(ent(D.leaders).map(([,v])=>v)),o={},tm=Array.from({length:N()},()=>[]),cnt=Array.from({length:n},()=>({t:0,'남':0,'여':0}));
+if($('#ro').checked)M.forEach(m=>{if(A(m.id)!=null&&A(m.id)<n)keep.add(m.id)});
 M.forEach(m=>{if(keep.has(m.id)&&A(m.id)!=null&&A(m.id)<n){cnt[A(m.id)].t++;cnt[A(m.id)][m.g]++;tm[A(m.id)].push(m)}else o['assign/m'+m.id]=null});
 let pool=shuffle(M.filter(m=>!keep.has(m.id)||A(m.id)==null||A(m.id)>=n));if(mode=='bal')pool=[...pool.filter(m=>m.g=='여'),...pool.filter(m=>m.g!='여')];
 const cap=Math.ceil(M.length/n);
-for(const m of pool){let c=[...Array(n).keys()].filter(i=>cnt[i].t<cap);if($('#av').checked){const c2=c.filter(i=>!tm[i].some(x=>m.cf.includes(x.id)||x.cf.includes(m.id)));if(c2.length)c=c2}
+for(const m of pool){let c=[...Array(n).keys()].filter(i=>cnt[i].t<cap);if(!c.length)c=[...Array(n).keys()];if($('#av').checked){const c2=c.filter(i=>!tm[i].some(x=>m.cf.includes(x.id)||x.cf.includes(m.id)));if(c2.length)c=c2}
 const key=i=>mode=='bal'?cnt[i][m.g]*100+cnt[i].t:cnt[i].t,mn=Math.min(...c.map(key)),t=shuffle(c.filter(i=>key(i)==mn))[0];o['assign/m'+m.id]=t;cnt[t].t++;cnt[t][m.g]++;tm[t].push(m)}
 AU(o)}
 $('#un').onclick=()=>{const s=HIST.pop();if(s){const o={};paths('assign',D.assign,s.assign,o);paths('leaders',D.leaders,s.leaders,o);U(o)}$('#un').disabled=!HIST.length};
 $('#mx').onchange=()=>{const v=+$('#mx').value;U({'config/n':N(),'config/max':v>0?v:null})};
 $('#cl').onclick=()=>U({'config/n':N(),'config/open':!OPEN()});
-$('#rnd').onclick=()=>auto('rnd');$('#bal').onclick=()=>auto('bal');
+const ask=mode=>{if($('#ro').checked)return auto(mode);const ls=new Set(ent(D.leaders).map(([,v])=>v));if(ent(D.assign).some(([k])=>!ls.has(+k.slice(1)))&&!confirm('팀장을 제외한 모든 팀원의 현재 배정이 초기화되고 다시 배정됩니다.\n계속할까요?'))return;auto(mode)};
+$('#rnd').onclick=()=>ask('rnd');$('#bal').onclick=()=>ask('bal');
 $('#cp').onclick=async()=>{let s='';for(let t=0;t<N();t++){s+=`[${t+1}조]${L(t)&&byId(L(t))?' 팀장: '+byId(L(t)).n:''}\n`+M.filter(m=>A(m.id)===t).map(m=>`- ${m.n}(${m.g})`).join('\n')+'\n\n'}
 const un=M.filter(m=>A(m.id)==null);if(un.length)s+=`[미배정] ${un.map(m=>m.n).join(', ')}\n`;
 try{await navigator.clipboard.writeText(s.trim());$('#cp').textContent='복사됨 ✓'}catch(_){prompt('복사해서 사용하세요',s)}setTimeout(()=>$('#cp').textContent='결과 복사',1500)};
@@ -148,8 +167,9 @@ const gp=s=>{s=String(s).trim();return s==='다 좋아함'?{all:true,l:[]}:{all:
 const mp=new Map();rows.slice(1).forEach(r=>{const n=String(r[3]).trim();if(!n)return;const a=gp(r[7]),d=gp(r[8]);let note=String(r[9]).trim();if(/^(없|j$|x$|-)/.test(note))note='';mp.set(n,{n,g:String(r[4]).trim()[0]||'남',ar:String(r[5]).trim(),ml:String(r[6]).trim(),all:a.all,l:a.l,d:d.l,note})});
 const nm=[...mp.values()].map((m,i)=>({...m,id:i+1}));if(!nm.length){alert('읽을 응답이 없습니다. 양식을 확인하세요.');return}
 const x=nm.filter(m=>m.g=='남').length;if(!confirm(`응답자 ${nm.length}명(남 ${x} / 여 ${nm.length-x})으로 명단을 교체할까요?\n기존 편성은 이름이 같은 사람끼리 유지됩니다.`))return;
+const hit=(note,me,list)=>{let t=note;const r=[];[...list].sort((a,b)=>b.n.length-a.n.length).forEach(o=>{if(o.n&&t.includes(o.n)){if(o.n!==me)r.push(o.id);t=t.split(o.n).join(' ')}});return r};
 const old={};M.forEach(m=>{const t=A(m.id);if(t!=null)old[m.n]={t,L:L(t)==m.id}});
-const mem={},asg={},lds={},priv={};nm.forEach(m=>{const k='m'+m.id,{id,note,...pub}=m;mem[k]=pub;priv[k]={note,cf:nm.filter(o=>o.n!==m.n&&note.includes(o.n)).map(o=>o.id)};const o=old[m.n];if(o&&o.t<N()){asg[k]=o.t;if(o.L)lds['t'+o.t]=m.id}});
+const mem={},asg={},lds={},priv={};nm.forEach(m=>{const k='m'+m.id,{id,note,...pub}=m;mem[k]=pub;priv[k]={note,cf:hit(note,m.n,nm)};const o=old[m.n];if(o&&o.t<N()){asg[k]=o.t;if(o.L)lds['t'+o.t]=m.id}});
 try{const o={members:mem,private:await enc(priv,PW)};paths('assign',D.assign,asg,o);paths('leaders',D.leaders,lds,o);await U(o)}catch(er){alert('저장 실패: '+er.message+'\nFirebase 규칙에 members, private 경로가 있는지 확인하세요.');return}
 PRIV=priv;applyPriv();render()};
 window.addEventListener('unhandledrejection',e=>alert('저장 실패: '+(e.reason&&e.reason.message||e.reason)));
