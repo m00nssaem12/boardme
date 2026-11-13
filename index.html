@@ -47,6 +47,12 @@ button,select,input{font:inherit;color:inherit}
 .teams.one .g{font-size:.82rem;padding:2px 9px}
 .teams.one .wn{font-size:.9rem}
 .teams.one .mv{font-size:.9rem;max-width:100px}
+.ck{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:7px;font-size:.75rem}
+.ck span{color:var(--sub);margin:0 2px 0 6px}.ck span:first-child{margin-left:0}
+.ck button{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:.75rem;min-width:30px}
+.ck button.o.on{background:var(--ok);color:#fff;border-color:var(--ok)}.ck button.x.on{background:var(--no);color:#fff;border-color:var(--no)}
+.mc.ab{opacity:.55}.cks{margin:-2px 0 8px}
+.teams.one .ck{font-size:.95rem;gap:6px}.teams.one .ck button{font-size:.95rem;padding:5px 14px}
 .ad{background:none;border:0;color:var(--sub);font-size:.78rem;cursor:pointer;margin-top:22px;opacity:.6}
 </style></head><body><div class="wrap">
 <h1>🎲 보드미 다모임 조 배정</h1>
@@ -92,13 +98,25 @@ const ORD=['3시 이전','3시~3시 30분','3시 30분~4시','4시~4시 30분','
 function info(ms){if(!ms.length)return'';const o=(a,b)=>(ORD.indexOf(a[0])+99)%99-(ORD.indexOf(b[0])+99)%99;
 return `<div class="sm"><div class="st">도착·식사 요약</div>${tally(ms,m=>[m.ar||'미응답'],'tm','🕒',o)}${tally(ms,m=>[m.ml||'미응답'],g=>g==='가능'?'y':g==='불가능'?'x':'tm','🍚',(a,b)=>b[1].length-a[1].length)}</div>`}
 function drawTabs(){const n=N();if(SEL!=null&&SEL>=n)SEL=null;$('#tabs').innerHTML=M.length?[null,...Array(n).keys()].map(i=>`<button class="tb ${SEL===i?'on':''}" data-i="${i==null?'':i}">${i==null?'전체':(i+1)+'조'}</button>`).join(''):''}
+/* 참석·식사 체크 (a: 참석 1/불참 0, f: 식사 1/안 함 0) */
+const CK=m=>D.check?.['m'+m.id]||{};
+const canCk=t=>t!=null&&(ADM||(ME!=null&&t===ME));
+function ckUI(m,t){if(t==null)return'';const c=CK(m);
+if(canCk(t)){const B=(k,v,lab)=>`<button class="${v?'o':'x'} ${c[k]===v?'on':''}" data-ck="${m.id}" data-k="${k}" data-v="${v}">${lab}</button>`;
+return `<div class="ck"><span>참석</span>${B('a',1,'O')}${B('a',0,'X')}<span>식사</span>${B('f',1,'O')}${B('f',0,'X')}</div>`}
+const s=(c.a===1?'<i class="y">✅ 참석</i>':c.a===0?'<i class="x">❌ 불참</i>':'')+(c.f===1?'<i class="y">🍚 식사</i>':c.f===0?'<i class="x">🍚 식사 안 함</i>':'');
+return s?`<div class="ch">${s}</div>`:''}
+function ckSum(mem,t){if(!mem.length)return'';const cs=mem.map(CK);if(!canCk(t)&&!cs.some(c=>c.a!=null||c.f!=null))return'';
+const at=cs.filter(c=>c.a===1).length,ab=cs.filter(c=>c.a===0).length,fo=cs.filter(c=>c.f===1).length,fx=cs.filter(c=>c.f===0).length;
+return `<div class="ch cks"><i class="y">✅ 참석 ${at}</i><i class="x">❌ 불참 ${ab}</i><i class="tm">❔ 미확인 ${mem.length-at-ab}</i><i class="y">🍚 식사 ${fo}</i>${fx?`<i class="x">식사 안 함 ${fx}</i>`:''}</div>`}
+const ckTag=m=>{const c=CK(m),s=[];if(c.a===1)s.push('참석');if(c.a===0)s.push('불참');if(c.f===1)s.push('식사O');if(c.f===0)s.push('식사X');return s.length?` (${s.join(', ')})`:''};
 /* 카드 */
 function card(m,t,F){const isL=t!=null&&L(t)==m.id;let act='';
 if(ADM)act=`<select class="mv" data-mv="${m.id}"><option value="" disabled selected>이동</option><option value="">미배정</option>${[...Array(N()).keys()].map(i=>`<option value="${i}">${i+1}조</option>`).join('')}</select>`;
 else if(ME!=null&&OPEN()&&t==null)act=`<button class="btn p sm1" data-take="${m.id}">＋ 내 조로</button>`;
 else if(ME!=null&&OPEN()&&t===ME&&!isL)act=`<button class="btn sm1" data-rel="${m.id}">빼기</button>`;
 const mates=ADM&&t!=null?M.filter(o=>o.id!=m.id&&A(o.id)===t&&(m.cf.includes(o.id)||o.cf.includes(m.id))):[];
-return `<div class="mc ${isL?'L':''}" ${ADM?'draggable="true"':''} data-id="${m.id}"><div class="r1">${ADM&&t!=null?`<button class="star ${isL?'on':''}" data-star="${m.id}">★</button>`:isL?'👑':''}<span class="nm">${esc(m.n)}</span><span class="g ${esc(m.g)}">${esc(m.g)}</span>${act}</div>${chips(m)}${F?mi(m):''}${m.note?`<div class="wn">불편 희망: ${esc(m.note)}</div>`:''}${mates.length?`<div class="wn">⚠️ 같은 조에 불편 대상: ${mates.map(o=>esc(o.n)).join(', ')}</div>`:''}</div>`}
+return `<div class="mc ${isL?'L':''} ${t!=null&&CK(m).a===0?'ab':''}" ${ADM?'draggable="true"':''} data-id="${m.id}"><div class="r1">${ADM&&t!=null?`<button class="star ${isL?'on':''}" data-star="${m.id}">★</button>`:isL?'👑':''}<span class="nm">${esc(m.n)}</span><span class="g ${esc(m.g)}">${esc(m.g)}</span>${act}</div>${ckUI(m,t)}${chips(m)}${F?mi(m):''}${m.note?`<div class="wn">불편 희망: ${esc(m.note)}</div>`:''}${mates.length?`<div class="wn">⚠️ 같은 조에 불편 대상: ${mates.map(o=>esc(o.n)).join(', ')}</div>`:''}</div>`}
 function render(){const n=N(),a=M.filter(m=>m.g=='남').length;$('#nt').value=n;$('#stat').textContent=M.length?`총 ${M.length}명 (남 ${a} / 여 ${M.length-a}) · 조당 최대 ${MAXT()}명 · ${OPEN()?'선택 진행 중':'🔒 선택 마감'}`:'';
 if(document.activeElement!==$('#mx'))$('#mx').value=D.config?.max||'';$('#mx').placeholder=MAXT();$('#cl').textContent=OPEN()?'🔒 선택 종료':'🔓 선택 재개';
 $('#lb').textContent=D.private?'입장':'비밀번호 설정';
@@ -110,7 +128,7 @@ $('#lay').className='layout'+(showPool?'':' np');
 $('#pool').innerHTML=showPool?`<div class="zone" data-zone=""><div class="zh">미배정 <small>${un.length}명</small></div>${un.map(m=>card(m,null,true)).join('')||'<div class="empty">모두 배정되었습니다</div>'}</div>`:'';
 if(!M.length){$('#teams').innerHTML='<div class="empty">아직 명단이 없습니다. 관리자가 엑셀을 업로드하면 표시됩니다.</div>';return}
 let h='';for(let t=0;t<n;t++){if(SEL!=null&&SEL!==t)continue;const mem=M.filter(m=>A(m.id)===t).sort((x,y)=>(L(t)==y.id)-(L(t)==x.id)),mm=mem.filter(m=>m.g=='남').length;
-h+=`<div class="zone ${ME===t?'me':''}" data-zone="${t}"><div class="zh">${t+1}조 <small>${mem.length}명 · 남 ${mm} / 여 ${mem.length-mm}</small></div>${sum(mem)}${SEL!=null?info(mem):''}
+h+=`<div class="zone ${ME===t?'me':''}" data-zone="${t}"><div class="zh">${t+1}조 <small>${mem.length}명 · 남 ${mm} / 여 ${mem.length-mm}</small></div>${ckSum(mem,t)}${sum(mem)}${SEL!=null?info(mem):''}
 ${ADM?`<select class="lead" data-lead="${t}"><option value="">👑 팀장 선택…</option>${M.map(m=>`<option value="${m.id}" ${L(t)==m.id?'selected':''}>${esc(m.n)} (${esc(m.g)})</option>`).join('')}</select>`:''}
 <div class="members">${mem.map(m=>card(m,t,SEL!=null||ME===t)).join('')||'<div class="empty">비어 있음</div>'}</div></div>`}
 $('#teams').className='teams'+(SEL!=null?' one':'');$('#teams').innerHTML=h}
@@ -127,6 +145,7 @@ if(b=g('.tb')){SEL=b.dataset.i===''?null:+b.dataset.i;render()}
 else if(b=g('[data-star]')){const id=+b.dataset.star,t=A(id);L(t)==id?AU({['leaders/t'+t]:null}):AU({['leaders/t'+t]:id})}
 else if(b=g('[data-take]')){if(!OPEN())return alert('선택이 마감되었습니다.');if(SZ(ME)>=MAXT())return alert(`한 조 최대 ${MAXT()}명이에요.`);runTransaction(ref(db,'boardme/assign/m'+b.dataset.take),c=>c==null?ME:undefined).then(r=>{if(!r.committed)alert('이미 다른 팀장이 선택한 팀원이에요.')})}
 else if(b=g('[data-rel]')){const id=+b.dataset.rel;if(A(id)===ME&&L(ME)!=id)U({['assign/m'+id]:null})}
+else if(b=g('[data-ck]')){const id=+b.dataset.ck,k=b.dataset.k,v=+b.dataset.v;if(!canCk(A(id)))return;const c=CK({id}),o={},nv=c[k]===v?null:v;o[`check/m${id}/${k}`]=nv;if(k==='a'&&nv===0)o[`check/m${id}/f`]=0;U(o)}
 else if(g('#lo')){ME=null;try{localStorage.removeItem('bm_me')}catch(_){}render()}});
 let drag=null;
 document.addEventListener('dragstart',e=>{const c=e.target.closest('.mc');if(c&&ADM){drag=c.dataset.id;e.dataTransfer.setData('text/plain',drag)}});
@@ -155,7 +174,8 @@ $('#mx').onchange=()=>{const v=+$('#mx').value;U({'config/n':N(),'config/max':v>
 $('#cl').onclick=()=>U({'config/n':N(),'config/open':!OPEN()});
 const ask=mode=>{if($('#ro').checked)return auto(mode);const ls=new Set(ent(D.leaders).map(([,v])=>v));if(ent(D.assign).some(([k])=>!ls.has(+k.slice(1)))&&!confirm('팀장을 제외한 모든 팀원의 현재 배정이 초기화되고 다시 배정됩니다.\n계속할까요?'))return;auto(mode)};
 $('#rnd').onclick=()=>ask('rnd');$('#bal').onclick=()=>ask('bal');
-$('#cp').onclick=async()=>{let s='';for(let t=0;t<N();t++){s+=`[${t+1}조]${L(t)&&byId(L(t))?' 팀장: '+byId(L(t)).n:''}\n`+M.filter(m=>A(m.id)===t&&L(t)!=m.id).map(m=>`- ${m.n}`).join('\n')+'\n\n'}
+$('#cp').onclick=async()=>{let s='';for(let t=0;t<N();t++){const mem=M.filter(m=>A(m.id)===t),cs=mem.map(CK),any=cs.some(c=>c.a!=null||c.f!=null);
+s+=`[${t+1}조]${L(t)&&byId(L(t))?' 팀장: '+byId(L(t)).n+ckTag(byId(L(t))):''}${any?` · 참석 ${cs.filter(c=>c.a===1).length} / 식사 ${cs.filter(c=>c.f===1).length}`:''}\n`+mem.filter(m=>L(t)!=m.id).map(m=>`- ${m.n}${ckTag(m)}`).join('\n')+'\n\n'}
 const un=M.filter(m=>A(m.id)==null);if(un.length)s+=`[미배정] ${un.map(m=>m.n).join(', ')}\n`;
 try{await navigator.clipboard.writeText(s.trim());$('#cp').textContent='복사됨 ✓'}catch(_){prompt('복사해서 사용하세요',s)}setTimeout(()=>$('#cp').textContent='결과 복사',1500)};
 /* 엑셀 업로드 */
@@ -168,9 +188,9 @@ const mp=new Map();rows.slice(1).forEach(r=>{const n=String(r[3]).trim();if(!n)r
 const nm=[...mp.values()].map((m,i)=>({...m,id:i+1}));if(!nm.length){alert('읽을 응답이 없습니다. 양식을 확인하세요.');return}
 const x=nm.filter(m=>m.g=='남').length;if(!confirm(`응답자 ${nm.length}명(남 ${x} / 여 ${nm.length-x})으로 명단을 교체할까요?\n기존 편성은 이름이 같은 사람끼리 유지됩니다.`))return;
 const hit=(note,me,list)=>{let t=note;const r=[];[...list].sort((a,b)=>b.n.length-a.n.length).forEach(o=>{if(o.n&&t.includes(o.n)){if(o.n!==me)r.push(o.id);t=t.split(o.n).join(' ')}});return r};
-const old={};M.forEach(m=>{const t=A(m.id);if(t!=null)old[m.n]={t,L:L(t)==m.id}});
-const mem={},asg={},lds={},priv={};nm.forEach(m=>{const k='m'+m.id,{id,note,...pub}=m;mem[k]=pub;priv[k]={note,cf:hit(note,m.n,nm)};const o=old[m.n];if(o&&o.t<N()){asg[k]=o.t;if(o.L)lds['t'+o.t]=m.id}});
-try{const o={members:mem,private:await enc(priv,PW)};paths('assign',D.assign,asg,o);paths('leaders',D.leaders,lds,o);await U(o)}catch(er){alert('저장 실패: '+er.message+'\nFirebase 규칙에 members, private 경로가 있는지 확인하세요.');return}
+const old={},oc={};M.forEach(m=>{const t=A(m.id);if(t!=null)old[m.n]={t,L:L(t)==m.id};const c=D.check?.['m'+m.id];if(c)oc[m.n]=c});
+const mem={},asg={},lds={},priv={},cks={};nm.forEach(m=>{const k='m'+m.id,{id,note,...pub}=m;mem[k]=pub;priv[k]={note,cf:hit(note,m.n,nm)};if(oc[m.n])cks[k]=oc[m.n];const o=old[m.n];if(o&&o.t<N()){asg[k]=o.t;if(o.L)lds['t'+o.t]=m.id}});
+try{const o={members:mem,private:await enc(priv,PW)};paths('assign',D.assign,asg,o);paths('leaders',D.leaders,lds,o);if(D.check)o.check=Object.keys(cks).length?cks:null;await U(o)}catch(er){alert('저장 실패: '+er.message+'\nFirebase 규칙에 members, private 경로가 있는지 확인하세요.');return}
 PRIV=priv;applyPriv();render()};
 window.addEventListener('unhandledrejection',e=>alert('저장 실패: '+(e.reason&&e.reason.message||e.reason)));
 </script></body></html>
