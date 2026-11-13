@@ -51,7 +51,7 @@ button,select,input{font:inherit;color:inherit}
 .ck span{color:var(--sub);margin:0 2px 0 6px}.ck span:first-child{margin-left:0}
 .ck button{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:.75rem;min-width:30px}
 .ck button.o.on{background:var(--ok);color:#fff;border-color:var(--ok)}.ck button.x.on{background:var(--no);color:#fff;border-color:var(--no)}
-.mc.ab{opacity:.55}.cks{margin:-2px 0 8px}
+.mc.ab{opacity:.55}.rl{font-size:.9rem;line-height:1.7;margin-bottom:12px;word-break:keep-all}.st small{font-weight:400}.cks{margin:-2px 0 8px}
 .teams.one .ck{font-size:.95rem;gap:6px}.teams.one .ck button{font-size:.95rem;padding:5px 14px}
 .ad{background:none;border:0;color:var(--sub);font-size:.78rem;cursor:pointer;margin-top:22px;opacity:.6}
 </style></head><body><div class="wrap">
@@ -110,6 +110,8 @@ function ckSum(mem,t){if(!mem.length)return'';const cs=mem.map(CK);if(!canCk(t)&
 const at=cs.filter(c=>c.a===1).length,ab=cs.filter(c=>c.a===0).length,fo=cs.filter(c=>c.f===1).length,fx=cs.filter(c=>c.f===0).length;
 return `<div class="ch cks"><i class="y">✅ 참석 ${at}</i><i class="x">❌ 불참 ${ab}</i><i class="tm">❔ 미확인 ${mem.length-at-ab}</i><i class="y">🍚 식사 ${fo}</i>${fx?`<i class="x">식사 안 함 ${fx}</i>`:''}</div>`}
 const ckTag=m=>{const c=CK(m),s=[];if(c.a===1)s.push('참석');if(c.a===0)s.push('불참');if(c.f===1)s.push('식사O');if(c.f===0)s.push('식사X');return s.length?` (${s.join(', ')})`:''};
+function roster(){if(!M.length)return'';const L1=(ttl,ms)=>`<div class="st">${ttl} <small>${ms.length}명</small></div><div class="rl">${ms.length?ms.map(m=>esc(m.n)).join(', '):'<span class="stat">아직 없음</span>'}</div>`;
+return `<div class="zone" style="margin-top:12px"><div class="zh">명단</div>${L1('✅ 실제 참가',M.filter(m=>CK(m).a===1))}${L1('🍚 식사 참여',M.filter(m=>CK(m).f===1))}</div>`}
 /* 카드 */
 function card(m,t,F){const isL=t!=null&&L(t)==m.id;let act='';
 if(ADM)act=`<select class="mv" data-mv="${m.id}"><option value="" disabled selected>이동</option><option value="">미배정</option>${[...Array(N()).keys()].map(i=>`<option value="${i}">${i+1}조</option>`).join('')}</select>`;
@@ -125,7 +127,7 @@ if(ME!=null&&(ME>=n||!lds.includes(ME)))ME=null;
 $('#me').innerHTML=ME!=null?`👑 <b>${esc(byId(L(ME)).n)}</b> 팀장 · ${ME+1}조 <button class="btn sm1" id="lo">팀장 나가기</button>`:lds.length&&!ADM?`<select id="ls"><option value="">팀장이세요? 이름을 선택하세요</option>${lds.map(t=>`<option value="${t}">${esc(byId(L(t)).n)} (${t+1}조)</option>`).join('')}</select>`:'';
 drawTabs();const un=M.filter(m=>A(m.id)==null),showPool=ADM||ME!=null;
 $('#lay').className='layout'+(showPool?'':' np');
-$('#pool').innerHTML=showPool?`<div class="zone" data-zone=""><div class="zh">미배정 <small>${un.length}명</small></div>${un.map(m=>card(m,null,true)).join('')||'<div class="empty">모두 배정되었습니다</div>'}</div>`:'';
+$('#pool').innerHTML=showPool?`<div class="zone" data-zone=""><div class="zh">미배정 <small>${un.length}명</small></div>${un.map(m=>card(m,null,true)).join('')||'<div class="empty">모두 배정되었습니다</div>'}</div>${roster()}`:'';
 if(!M.length){$('#teams').innerHTML='<div class="empty">아직 명단이 없습니다. 관리자가 엑셀을 업로드하면 표시됩니다.</div>';return}
 let h='';for(let t=0;t<n;t++){if(SEL!=null&&SEL!==t)continue;const mem=M.filter(m=>A(m.id)===t).sort((x,y)=>(L(t)==y.id)-(L(t)==x.id)),mm=mem.filter(m=>m.g=='남').length;
 h+=`<div class="zone ${ME===t?'me':''}" data-zone="${t}"><div class="zh">${t+1}조 <small>${mem.length}명 · 남 ${mm} / 여 ${mem.length-mm}</small></div>${ckSum(mem,t)}${sum(mem)}${SEL!=null?info(mem):''}
@@ -145,7 +147,7 @@ if(b=g('.tb')){SEL=b.dataset.i===''?null:+b.dataset.i;render()}
 else if(b=g('[data-star]')){const id=+b.dataset.star,t=A(id);L(t)==id?AU({['leaders/t'+t]:null}):AU({['leaders/t'+t]:id})}
 else if(b=g('[data-take]')){if(!OPEN())return alert('선택이 마감되었습니다.');if(SZ(ME)>=MAXT())return alert(`한 조 최대 ${MAXT()}명이에요.`);runTransaction(ref(db,'boardme/assign/m'+b.dataset.take),c=>c==null?ME:undefined).then(r=>{if(!r.committed)alert('이미 다른 팀장이 선택한 팀원이에요.')})}
 else if(b=g('[data-rel]')){const id=+b.dataset.rel;if(A(id)===ME&&L(ME)!=id)U({['assign/m'+id]:null})}
-else if(b=g('[data-ck]')){const id=+b.dataset.ck,k=b.dataset.k,v=+b.dataset.v;if(!canCk(A(id)))return;const c=CK({id}),o={},nv=c[k]===v?null:v;o[`check/m${id}/${k}`]=nv;if(k==='a'&&nv===0)o[`check/m${id}/f`]=0;U(o)}
+else if(b=g('[data-ck]')){const id=+b.dataset.ck,k=b.dataset.k,v=+b.dataset.v;if(!canCk(A(id)))return;const c=CK({id}),o={},nv=c[k]===v?null:v;o[`check/m${id}/${k}`]=nv;if(k==='a'&&nv===0)o[`check/m${id}/f`]=0;U(o).catch(er=>alert('참석·식사 저장이 막혔어요.\nFirebase 규칙(Rules)에 "check" 경로 쓰기 권한을 추가해 주세요.\n\n('+(er&&er.message||er)+')'))}
 else if(g('#lo')){ME=null;try{localStorage.removeItem('bm_me')}catch(_){}render()}});
 let drag=null;
 document.addEventListener('dragstart',e=>{const c=e.target.closest('.mc');if(c&&ADM){drag=c.dataset.id;e.dataTransfer.setData('text/plain',drag)}});
